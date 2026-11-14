@@ -1,0 +1,49 @@
+@import url("https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Inter:wght@400;500;600&display=swap");
+@import "tailwindcss";
+
+/*
+ * Identidade visual Trinitas (Manual de Identidade Visual, versão 1.0, 2026).
+ * Verde Trinitas (#1BA89A) para marca e destaques; para texto branco sobre verde
+ * usa-se o tom profundo (#0E7C72), que atende ao contraste mínimo de leitura.
+ */
+@theme {
+  --color-trinitas: #1ba89a;
+  --color-trinitas-profundo: #0e7c72;
+  --color-trinitas-hover: #0a6b62;
+  --color-trinitas-suave: #e6f4f2;
+  --color-trinitas-texto: #0b6159;
+  --color-lima: #b5c81a;
+  --color-lima-suave: #f4f7d9;
+  --color-lima-texto: #4d5600;
+  --color-carvao: #1a1a1a;
+  --color-cinza-escuro: #374151;
+  --color-cinza-medio: #6b7280;
+  --color-cinza-claro: #f9fafb;
+  --color-borda: #e5e7eb;
+  --color-alerta-suave: #fdecec;
+  --color-alerta-texto: #8a1c1c;
+
+  --font-display: "Merriweather", Georgia, serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+
+  --radius-sm: 4px;
+}
+
+html {
+  font-family: var(--font-sans);
+  color: var(--color-carvao);
+  background: var(--color-cinza-claro);
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-trinitas);
+  outline-offset: 2px;
+}
