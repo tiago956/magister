@@ -6,7 +6,7 @@ Endereço previsto: **magister.trinitasvillabranca.com.br**
 
 ## O que já está pronto (etapa 1: base)
 
-- Login com a conta Google da escola. Contas de fora do domínio `trinitasvillabranca.com.br` são recusadas pelo banco de dados.
+- Login por código enviado ao e-mail da escola, sem senha. E-mails de fora do domínio `trinitasvillabranca.com.br` são recusados pelo banco de dados.
 - Banco de dados com turmas, matérias, grade horária de 2027 e atribuições, com regras de acesso: toda a equipe lê, só coordenação e direção alteram.
 - **Painel**: cada professor vê as suas aulas da semana, com o modelo de aula de cada uma.
 - **Atribuições** (coordenação e direção): atribuir regente (uma turma, várias matérias) ou especialista (uma matéria, várias turmas), grade semanal por turma, quadro de cobertura e papéis de acesso da equipe.
@@ -27,23 +27,32 @@ No painel do Supabase, abra **SQL Editor** e execute, nesta ordem, o conteúdo d
 
 1. `supabase/migrations/20261114000001_base.sql` (tabelas, regras de acesso e restrição de domínio)
 2. `supabase/migrations/20261114000002_dados_iniciais.sql` (7 turmas, 12 matérias e a grade semanal)
+3. `supabase/migrations/20261114000003_eh_gestor_fora_da_api.sql` (ajuste de segurança)
 
-### 2. Login com Google
+No projeto `magister` do Supabase (região São Paulo) isso já foi feito.
 
-**No Google Cloud** (com a conta administradora do Google Workspace da escola):
+### 2. Login por código enviado ao e-mail
 
-1. Crie um projeto chamado *Magister*.
-2. Em **APIs e serviços → Tela de permissão OAuth**, escolha o tipo **Interno** (só contas da escola).
-3. Em **Credenciais → Criar credenciais → ID do cliente OAuth**, tipo **Aplicativo da Web**.
-4. Em **URIs de redirecionamento autorizados**, coloque `https://SEU-PROJETO.supabase.co/auth/v1/callback`.
-5. Guarde o **ID do cliente** e a **chave secreta do cliente**.
+O professor digita o e-mail da escola, recebe um código e entra. Não há senha. Configuração no painel do Supabase:
 
-**No Supabase**:
+**Modelo do e-mail** (Authentication → Email Templates). Nos modelos **Confirm sign up** e **Magic link**, use:
 
-1. **Authentication → Sign In / Providers → Google**: ative e cole o ID e a chave secreta do cliente.
-2. **Authentication → URL Configuration**:
-   - *Site URL*: `https://magister.trinitasvillabranca.com.br` (ou `http://localhost:3000` enquanto testa)
-   - *Redirect URLs*: `http://localhost:3000/**` e `https://magister.trinitasvillabranca.com.br/**`
+- Assunto: `{{ .Token }} é o seu código do Magister`
+- Corpo:
+
+```html
+<h2>Seu código de acesso ao Magister</h2>
+<p>Digite este código na tela de entrada:</p>
+<p style="font-size:28px;letter-spacing:6px"><strong>{{ .Token }}</strong></p>
+<p>Ou entre direto por este link: <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}">Entrar no Magister</a></p>
+<p>O código vale por pouco tempo e só pode ser usado uma vez. Se você não pediu este código, ignore este e-mail.</p>
+```
+
+**Endereço do sistema** (Authentication → URL Configuration): em *Site URL*, coloque `https://magister.trinitasvillabranca.com.br`.
+
+**Envio dos e-mails** (Authentication → SMTP Settings). O envio padrão do Supabase só entrega para os membros da organização no Supabase e tem limite baixo por hora: serve para testes. Para toda a equipe receber o código, configure um serviço de envio (por exemplo Resend ou Brevo, ambos com plano gratuito) com um remetente do domínio da escola.
+
+O login com Google pode ser acrescentado depois, quando a conta da escola tiver acesso ao Google Cloud.
 
 ### 3. Primeiro acesso da direção
 
@@ -72,8 +81,9 @@ A publicação prevista é na Vercel, apontando o subdomínio `magister.trinitas
 ```
 src/
   app/
-    login/              página de entrada (botão Google)
-    auth/callback/      retorno do Google
+    login/              página de entrada (e-mail e código)
+    auth/confirm/       link do e-mail de acesso
+    auth/callback/      retorno do Google (uso futuro)
     auth/sair/          encerrar sessão
     (sistema)/          área logada: painel, atribuições e próximos módulos
   lib/

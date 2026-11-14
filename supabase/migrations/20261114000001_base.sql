@@ -73,6 +73,7 @@ create table public.grade_horaria (
 );
 
 create index grade_horaria_turma_idx on public.grade_horaria (turma_id, dia_semana);
+create index grade_horaria_disciplina_idx on public.grade_horaria (disciplina_id);
 
 -- Atribuições --------------------------------------------------
 -- Qual professor responde por qual disciplina em qual turma.
@@ -89,6 +90,8 @@ create table public.atribuicoes (
 );
 
 create index atribuicoes_professor_idx on public.atribuicoes (professor_id);
+create index atribuicoes_disciplina_idx on public.atribuicoes (disciplina_id);
+create index atribuicoes_atualizado_por_idx on public.atribuicoes (atualizado_por);
 
 -- Funções auxiliares -------------------------------------------
 
@@ -102,7 +105,7 @@ set search_path = ''
 as $$
   select exists (
     select 1 from public.perfis
-    where id = auth.uid()
+    where id = (select auth.uid())
       and ativo
       and papel in ('coordenacao', 'direcao')
   );
@@ -205,26 +208,27 @@ create policy "equipe lê atribuições" on public.atribuicoes for select to aut
 
 -- Só a gestão (coordenação e direção) altera.
 create policy "gestão altera perfis" on public.perfis for update to authenticated
-  using (public.eh_gestor()) with check (public.eh_gestor());
+  using ((select public.eh_gestor())) with check ((select public.eh_gestor()));
 
-create policy "gestão insere turmas" on public.turmas for insert to authenticated with check (public.eh_gestor());
-create policy "gestão altera turmas" on public.turmas for update to authenticated using (public.eh_gestor()) with check (public.eh_gestor());
-create policy "gestão remove turmas" on public.turmas for delete to authenticated using (public.eh_gestor());
+create policy "gestão insere turmas" on public.turmas for insert to authenticated with check ((select public.eh_gestor()));
+create policy "gestão altera turmas" on public.turmas for update to authenticated using ((select public.eh_gestor())) with check ((select public.eh_gestor()));
+create policy "gestão remove turmas" on public.turmas for delete to authenticated using ((select public.eh_gestor()));
 
-create policy "gestão insere disciplinas" on public.disciplinas for insert to authenticated with check (public.eh_gestor());
-create policy "gestão altera disciplinas" on public.disciplinas for update to authenticated using (public.eh_gestor()) with check (public.eh_gestor());
-create policy "gestão remove disciplinas" on public.disciplinas for delete to authenticated using (public.eh_gestor());
+create policy "gestão insere disciplinas" on public.disciplinas for insert to authenticated with check ((select public.eh_gestor()));
+create policy "gestão altera disciplinas" on public.disciplinas for update to authenticated using ((select public.eh_gestor())) with check ((select public.eh_gestor()));
+create policy "gestão remove disciplinas" on public.disciplinas for delete to authenticated using ((select public.eh_gestor()));
 
-create policy "gestão insere grade" on public.grade_horaria for insert to authenticated with check (public.eh_gestor());
-create policy "gestão altera grade" on public.grade_horaria for update to authenticated using (public.eh_gestor()) with check (public.eh_gestor());
-create policy "gestão remove grade" on public.grade_horaria for delete to authenticated using (public.eh_gestor());
+create policy "gestão insere grade" on public.grade_horaria for insert to authenticated with check ((select public.eh_gestor()));
+create policy "gestão altera grade" on public.grade_horaria for update to authenticated using ((select public.eh_gestor())) with check ((select public.eh_gestor()));
+create policy "gestão remove grade" on public.grade_horaria for delete to authenticated using ((select public.eh_gestor()));
 
-create policy "gestão insere atribuições" on public.atribuicoes for insert to authenticated with check (public.eh_gestor());
-create policy "gestão altera atribuições" on public.atribuicoes for update to authenticated using (public.eh_gestor()) with check (public.eh_gestor());
-create policy "gestão remove atribuições" on public.atribuicoes for delete to authenticated using (public.eh_gestor());
+create policy "gestão insere atribuições" on public.atribuicoes for insert to authenticated with check ((select public.eh_gestor()));
+create policy "gestão altera atribuições" on public.atribuicoes for update to authenticated using ((select public.eh_gestor())) with check ((select public.eh_gestor()));
+create policy "gestão remove atribuições" on public.atribuicoes for delete to authenticated using ((select public.eh_gestor()));
 
 -- Funções expostas apenas a quem está logado.
 revoke execute on function public.eh_gestor() from public, anon;
 grant execute on function public.eh_gestor() to authenticated;
 revoke execute on function public.modelo_da_aula(public.segmento, smallint) from public, anon;
 grant execute on function public.modelo_da_aula(public.segmento, smallint) to authenticated;
+revoke execute on function public.ao_criar_usuario() from public, anon, authenticated;
