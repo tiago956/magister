@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { criarClienteServidor } from "@/lib/supabase/server";
 import { DIAS, ehGestor, hora, NOME_MODELO, perfilAtual, type ModeloAula } from "@/lib/dados";
+import { dataCurta, prazoEnvio, prazoVencido, rotuloSemana, semanaDePlanejamento } from "@/lib/semanas";
 
 export const metadata: Metadata = { title: "Painel" };
 
@@ -26,6 +27,19 @@ export default async function PainelPage() {
     .order("dia_semana")
     .order("inicio");
   const aulas = (data ?? []) as Aula[];
+
+  const semana = semanaDePlanejamento();
+  const planejaveis = aulas.filter((a) => a.modelo !== "leitura");
+  const { data: pls } = planejaveis.length
+    ? await supabase
+        .from("planos_aula")
+        .select("status")
+        .eq("semana_inicio", semana)
+        .in("grade_id", planejaveis.map((a) => a.grade_id))
+    : { data: [] };
+  const st = (pls ?? []).map((x) => x.status as string);
+  const enviados = st.filter((x) => x === "enviado" || x === "aprovado" || x === "realizado").length;
+  const ajustes = st.filter((x) => x === "ajustes").length;
 
   let semProfessor = 0;
   if (ehGestor(perfil)) {
@@ -61,6 +75,29 @@ export default async function PainelPage() {
           </p>
           <Link href="/atribuicoes" className="text-sm font-medium text-trinitas-profundo hover:text-trinitas-hover">
             Abrir atribuições
+          </Link>
+        </section>
+      )}
+
+      {planejaveis.length > 0 && (
+        <section
+          className={
+            "flex flex-wrap items-center justify-between gap-3 border border-borda border-l-4 bg-white px-5 py-4 " +
+            (ajustes || (enviados < planejaveis.length && prazoVencido(semana)) ? "border-l-alerta-texto" : enviados === planejaveis.length ? "border-l-trinitas" : "border-l-lima")
+          }
+        >
+          <div className="flex flex-col gap-1">
+            <strong className="text-sm">
+              Planejamento da semana de {rotuloSemana(semana)}: {enviados} de {planejaveis.length} planos enviados
+            </strong>
+            <span className="text-sm text-cinza-escuro">
+              {ajustes
+                ? `${ajustes} ${ajustes === 1 ? "plano com ajustes solicitados" : "planos com ajustes solicitados"} pela coordenação.`
+                : `Prazo de envio: quarta-feira, ${dataCurta(prazoEnvio(semana))}.`}
+            </span>
+          </div>
+          <Link href={`/planos?semana=${semana}`} className="rounded-sm border-2 border-trinitas-profundo bg-trinitas-profundo px-4 py-2 text-sm font-medium text-white hover:bg-trinitas-hover">
+            Abrir planos
           </Link>
         </section>
       )}
