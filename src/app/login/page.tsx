@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import EntrarComCodigo from "./entrar-com-codigo";
+import BotaoGoogle from "./botao-google";
 
 export const metadata: Metadata = { title: "Entrar" };
 
 const MENSAGENS: Record<string, string> = {
-  dominio: "Use o seu e-mail da Trinitas para entrar.",
+  dominio: "Use a sua conta Google da Trinitas para entrar.",
   link: "Este link já foi usado ou venceu. Peça um novo código.",
   falha: "Não foi possível concluir o login. Tente novamente.",
 };
@@ -34,10 +34,10 @@ export default async function LoginPage({
         )}
 
         <div className="mt-8">
-          <EntrarComCodigo dominio={process.env.NEXT_PUBLIC_ESCOLA_DOMINIO ?? ""} />
+          <BotaoGoogle dominio={process.env.NEXT_PUBLIC_ESCOLA_DOMINIO ?? ""} />
         </div>
         <p className="mt-4 text-xs text-cinza-medio">
-          Acesso restrito aos e-mails da escola. Não é preciso criar senha.
+          Acesso restrito às contas Google da escola.
         </p>
       </div>
     </main>

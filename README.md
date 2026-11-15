@@ -6,7 +6,7 @@ Endereço previsto: **magister.trinitasvillabranca.com.br**
 
 ## O que já está pronto (etapa 1: base)
 
-- Login por código enviado ao e-mail da escola, sem senha. E-mails de fora do domínio `trinitasvillabranca.com.br` são recusados pelo banco de dados.
+- Login com a conta Google da escola. Contas de fora do domínio `trinitasvillabranca.com.br` são recusadas pelo banco de dados.
 - Banco de dados com turmas, matérias, grade horária de 2027 e atribuições, com regras de acesso: toda a equipe lê, só coordenação e direção alteram.
 - **Painel**: cada professor vê as suas aulas da semana, com o modelo de aula de cada uma.
 - **Atribuições** (coordenação e direção): atribuir regente (uma turma, várias matérias) ou especialista (uma matéria, várias turmas), grade semanal por turma, quadro de cobertura e papéis de acesso da equipe.
@@ -31,28 +31,19 @@ No painel do Supabase, abra **SQL Editor** e execute, nesta ordem, o conteúdo d
 
 No projeto `magister` do Supabase (região São Paulo) isso já foi feito.
 
-### 2. Login por código enviado ao e-mail
+### 2. Login com Google
 
-O professor digita o e-mail da escola, recebe um código e entra. Não há senha. Configuração no painel do Supabase:
+Já configurado:
 
-**Modelo do e-mail** (Authentication → Email Templates). Nos modelos **Confirm sign up** e **Magic link**, use:
+- **Google Cloud** (conta da escola): projeto `Magister` (`magister-514714`), tela de permissão do tipo **Interno** (só contas da organização) e um cliente OAuth do tipo Aplicativo da Web, com o redirecionamento `https://gbriilalyslalwaramsi.supabase.co/auth/v1/callback`.
+- **Supabase** (Authentication → Sign In / Providers → Google): provedor ativado com o ID e a chave secreta do cliente.
 
-- Assunto: `{{ .Token }} é o seu código do Magister`
-- Corpo:
+Ainda no Supabase, em **Authentication → URL Configuration**:
 
-```html
-<h2>Seu código de acesso ao Magister</h2>
-<p>Digite este código na tela de entrada:</p>
-<p style="font-size:28px;letter-spacing:6px"><strong>{{ .Token }}</strong></p>
-<p>Ou entre direto por este link: <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}">Entrar no Magister</a></p>
-<p>O código vale por pouco tempo e só pode ser usado uma vez. Se você não pediu este código, ignore este e-mail.</p>
-```
+- *Site URL*: `https://magister.trinitasvillabranca.com.br`
+- *Redirect URLs*: `https://magister.trinitasvillabranca.com.br/**` (e `http://localhost:3000/**` para testes no computador)
 
-**Endereço do sistema** (Authentication → URL Configuration): em *Site URL*, coloque `https://magister.trinitasvillabranca.com.br`.
-
-**Envio dos e-mails** (Authentication → SMTP Settings). O envio padrão do Supabase só entrega para os membros da organização no Supabase e tem limite baixo por hora: serve para testes. Para toda a equipe receber o código, configure um serviço de envio (por exemplo Resend ou Brevo, ambos com plano gratuito) com um remetente do domínio da escola.
-
-O login com Google pode ser acrescentado depois, quando a conta da escola tiver acesso ao Google Cloud.
+O login por código enviado ao e-mail está pronto no código (`src/app/login/entrar-com-codigo.tsx`), mas depende de um serviço de envio de e-mails (SMTP próprio) no Supabase. Pode ser ligado depois.
 
 ### 3. Primeiro acesso da direção
 
@@ -81,9 +72,9 @@ A publicação prevista é na Vercel, apontando o subdomínio `magister.trinitas
 ```
 src/
   app/
-    login/              página de entrada (e-mail e código)
+    login/              página de entrada (botão Google)
     auth/confirm/       link do e-mail de acesso
-    auth/callback/      retorno do Google (uso futuro)
+    auth/callback/      retorno do Google
     auth/sair/          encerrar sessão
     (sistema)/          área logada: painel, atribuições e próximos módulos
   lib/
