@@ -3,6 +3,8 @@ import Link from "next/link";
 import { criarClienteServidor } from "@/lib/supabase/server";
 import { DIAS, ehGestor, hora, NOME_PAPEL, perfilAtual, type Papel, type Perfil } from "@/lib/dados";
 import { alterarPapel, atribuirEspecialista, atribuirRegente, salvarMatriz } from "./actions";
+import BotaoEnviar from "@/components/botao-enviar";
+import { RotuloLink } from "@/components/link-status";
 
 export const metadata: Metadata = { title: "Atribuições" };
 
@@ -103,7 +105,7 @@ export default async function AtribuicoesPage({
               {turmas.map((x) => <option key={x.id} value={x.id}>{x.nome}</option>)}
             </select>
           </label>
-          <button type="submit" className={botao + " self-start"}>Atribuir regente</button>
+          <BotaoEnviar className={botao + " self-start"}>Atribuir regente</BotaoEnviar>
         </form>
 
         <form action={atribuirEspecialista} className="flex flex-col gap-4 border border-borda bg-white p-6">
@@ -125,7 +127,7 @@ export default async function AtribuicoesPage({
               {disciplinas.filter((x) => !x.do_regente).map((x) => <option key={x.id} value={x.id}>{x.nome}</option>)}
             </select>
           </label>
-          <button type="submit" className={botao + " self-start"}>Atribuir especialista</button>
+          <BotaoEnviar className={botao + " self-start"}>Atribuir especialista</BotaoEnviar>
         </form>
       </section>
 
@@ -144,7 +146,7 @@ export default async function AtribuicoesPage({
                   (x.id === turmaVer?.id ? "border-cinza-escuro bg-cinza-escuro text-white" : "border-borda text-cinza-escuro hover:bg-cinza-claro")
                 }
               >
-                {x.nome}
+                <RotuloLink>{x.nome}</RotuloLink>
               </Link>
             ))}
           </nav>
@@ -197,7 +199,7 @@ export default async function AtribuicoesPage({
               {lacunas ? `${lacunas} matérias sem professor` : "Todas as matérias da grade têm professor"}
             </p>
           </div>
-          <button type="submit" className={botao}>Salvar atribuições</button>
+          <BotaoEnviar className={botao}>Salvar atribuições</BotaoEnviar>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1100px] border-collapse text-xs">
@@ -271,7 +273,7 @@ export default async function AtribuicoesPage({
                       <select name="papel" defaultValue={x.papel} aria-label={`Acesso de ${x.nome}`} className={campo + " py-1.5"}>
                         {(Object.keys(NOME_PAPEL) as Papel[]).map((k) => <option key={k} value={k}>{NOME_PAPEL[k]}</option>)}
                       </select>
-                      <button type="submit" className="rounded-sm border border-borda px-3 py-1.5 text-xs font-medium hover:bg-cinza-claro">Alterar</button>
+                      <BotaoEnviar className="rounded-sm border border-borda px-3 py-1.5 text-xs font-medium hover:bg-cinza-claro">Alterar</BotaoEnviar>
                     </form>
                   </td>
                 </tr>

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { criarClienteServidor } from "@/lib/supabase/server";
 import { DIAS, ehGestor, hora, NOME_MODELO, perfilAtual, type ModeloAula } from "@/lib/dados";
 import { dataCurta, prazoEnvio, prazoVencido, rotuloSemana, semanaDePlanejamento } from "@/lib/semanas";
+import { RotuloLink } from "@/components/link-status";
 
 export const metadata: Metadata = { title: "Painel" };
 
@@ -74,7 +75,7 @@ export default async function PainelPage() {
               : "Todas as aulas da grade têm professor atribuído."}
           </p>
           <Link href="/atribuicoes" className="text-sm font-medium text-trinitas-profundo hover:text-trinitas-hover">
-            Abrir atribuições
+            <RotuloLink>Abrir atribuições</RotuloLink>
           </Link>
         </section>
       )}
@@ -97,7 +98,7 @@ export default async function PainelPage() {
             </span>
           </div>
           <Link href={`/planos?semana=${semana}`} className="rounded-sm border-2 border-trinitas-profundo bg-trinitas-profundo px-4 py-2 text-sm font-medium text-white hover:bg-trinitas-hover">
-            Abrir planos
+            <RotuloLink>Abrir planos</RotuloLink>
           </Link>
         </section>
       )}

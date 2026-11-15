@@ -5,6 +5,7 @@ import type { ModeloAula } from "@/lib/dados";
 import { numeroDo, type Conteudo, type Momento } from "@/lib/modelos";
 import type { StatusPlano } from "@/lib/status";
 import { comentar, registrarAula, revisarPlano, salvarPlano } from "../../actions";
+import BotaoEnviar from "@/components/botao-enviar";
 
 type Comentario = { id: number; bloco: string | null; texto: string; quando: string; autor: string; daGestao: boolean };
 
@@ -182,17 +183,17 @@ export default function Editor(props: {
         {editavel && (
           <div className="flex flex-wrap justify-end gap-3 border-t border-borda pt-6">
             {leitura ? (
-              <button type="submit" name="acao" value="salvar" className={botaoPrimario}>
+              <BotaoEnviar name="acao" value="salvar" className={botaoPrimario}>
                 Salvar registro
-              </button>
+              </BotaoEnviar>
             ) : (
               <>
-                <button type="submit" name="acao" value="salvar" className={botaoSecundario}>
+                <BotaoEnviar name="acao" value="salvar" className={botaoSecundario}>
                   Salvar rascunho
-                </button>
-                <button type="submit" name="acao" value="enviar" className={botaoPrimario}>
+                </BotaoEnviar>
+                <BotaoEnviar name="acao" value="enviar" pendente="Enviando..." className={botaoPrimario}>
                   {props.status === "enviado" ? "Salvar e manter em revisão" : "Enviar para revisão"}
-                </button>
+                </BotaoEnviar>
               </>
             )}
           </div>
@@ -233,12 +234,12 @@ export default function Editor(props: {
                 <textarea name="texto" rows={3} className={campo} placeholder="Obrigatório para pedir ajustes" />
               </label>
               <div className="flex flex-wrap justify-end gap-3">
-                <button type="submit" name="decisao" value="ajustes" className={botaoSecundario}>
+                <BotaoEnviar name="decisao" value="ajustes" pendente="Enviando..." className={botaoSecundario}>
                   Pedir ajustes
-                </button>
-                <button type="submit" name="decisao" value="aprovado" className={botaoPrimario}>
+                </BotaoEnviar>
+                <BotaoEnviar name="decisao" value="aprovado" pendente="Aprovando..." className={botaoPrimario}>
                   Aprovar plano
-                </button>
+                </BotaoEnviar>
               </div>
             </form>
           ) : (
@@ -250,9 +251,9 @@ export default function Editor(props: {
                   Responder à coordenação
                   <textarea name="texto" rows={2} className={campo} />
                 </label>
-                <button type="submit" className={botaoSecundario + " self-end"}>
+                <BotaoEnviar pendente="Enviando..." className={botaoSecundario + " self-end"}>
                   Enviar comentário
-                </button>
+                </BotaoEnviar>
               </form>
             )
           )}
@@ -282,9 +283,9 @@ export default function Editor(props: {
             Observação (opcional)
             <textarea name="obs" rows={2} className={campo} placeholder="Exemplo: 18 de 22 alunos acertaram a verificação" />
           </label>
-          <button type="submit" className={botaoPrimario + " self-end"}>
+          <BotaoEnviar className={botaoPrimario + " self-end"}>
             Registrar aula
-          </button>
+          </BotaoEnviar>
         </form>
       )}
 

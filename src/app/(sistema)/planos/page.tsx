@@ -14,6 +14,7 @@ import {
   somarDias,
 } from "@/lib/semanas";
 import { Selo, situacao, type StatusPlano } from "@/lib/status";
+import { RotuloLink } from "@/components/link-status";
 
 export const metadata: Metadata = { title: "Planos de aula" };
 
@@ -81,10 +82,10 @@ export default async function PlanosPage({ searchParams }: { searchParams: Promi
         </div>
         <nav aria-label="Trocar de semana" className="flex items-center gap-2">
           <Link href={`/planos?semana=${somarDias(semana, -7)}`} className="rounded-sm border border-borda bg-white px-3 py-2 text-sm hover:bg-cinza-claro">
-            Semana anterior
+            <RotuloLink>Semana anterior</RotuloLink>
           </Link>
           <Link href={`/planos?semana=${somarDias(semana, 7)}`} className="rounded-sm border border-borda bg-white px-3 py-2 text-sm hover:bg-cinza-claro">
-            Próxima semana
+            <RotuloLink>Próxima semana</RotuloLink>
           </Link>
         </nav>
       </header>
@@ -156,7 +157,7 @@ export default async function PlanosPage({ searchParams }: { searchParams: Promi
                             href={`/planos/${x.grade_id}/${semana}`}
                             className="rounded-sm border border-borda bg-white px-3.5 py-2 text-[13px] font-medium hover:bg-cinza-claro"
                           >
-                            {ACAO[s]}
+                            <RotuloLink>{ACAO[s]}</RotuloLink>
                           </Link>
                         </li>
                       );

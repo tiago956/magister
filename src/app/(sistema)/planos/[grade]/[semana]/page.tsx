@@ -7,6 +7,7 @@ import { duracaoAula, momentosDo, type Conteudo, type Segmento } from "@/lib/mod
 import { dataCurta, dataDaAula, ehSegunda, prazoEnvio, rotuloSemana } from "@/lib/semanas";
 import { Selo, situacao, type StatusPlano } from "@/lib/status";
 import Editor from "./editor";
+import { RotuloLink } from "@/components/link-status";
 
 export const metadata: Metadata = { title: "Plano de aula" };
 
@@ -103,7 +104,7 @@ export default async function PlanoPage({
     <div className="flex max-w-5xl flex-col gap-6">
       <header className="flex flex-col gap-3 border-b border-borda pb-6">
         <Link href={gestor && !responsavel ? `/revisao?semana=${semana}` : `/planos?semana=${semana}`} className="text-[13px] text-trinitas-profundo hover:text-trinitas-hover">
-          {gestor && !responsavel ? "Voltar à revisão" : "Voltar aos planos da semana"}
+          <RotuloLink>{gestor && !responsavel ? "Voltar à revisão" : "Voltar aos planos da semana"}</RotuloLink>
         </Link>
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="flex flex-col gap-1.5">

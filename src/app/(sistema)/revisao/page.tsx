@@ -15,6 +15,8 @@ import {
 } from "@/lib/semanas";
 import type { StatusPlano } from "@/lib/status";
 import { aprovarEmLote } from "../planos/actions";
+import BotaoEnviar from "@/components/botao-enviar";
+import { RotuloLink } from "@/components/link-status";
 
 export const metadata: Metadata = { title: "Revisão" };
 
@@ -108,10 +110,10 @@ export default async function RevisaoPage({
         </div>
         <nav aria-label="Trocar de semana" className="flex items-center gap-2">
           <Link href={`/revisao?semana=${somarDias(semana, -7)}`} className="rounded-sm border border-borda bg-white px-3 py-2 text-sm hover:bg-cinza-claro">
-            Semana anterior
+            <RotuloLink>Semana anterior</RotuloLink>
           </Link>
           <Link href={`/revisao?semana=${somarDias(semana, 7)}`} className="rounded-sm border border-borda bg-white px-3 py-2 text-sm hover:bg-cinza-claro">
-            Próxima semana
+            <RotuloLink>Próxima semana</RotuloLink>
           </Link>
         </nav>
       </header>
@@ -151,9 +153,9 @@ export default async function RevisaoPage({
               ))}
             </nav>
             {fila.length > 0 && (
-              <button type="submit" className={botaoPrimario}>
+              <BotaoEnviar pendente="Aprovando..." className={botaoPrimario}>
                 Aprovar marcados
-              </button>
+              </BotaoEnviar>
             )}
           </div>
           {fila.length === 0 ? (
@@ -203,7 +205,7 @@ export default async function RevisaoPage({
                             href={`/planos/${x.grade_id}/${semana}`}
                             className="rounded-sm border border-borda px-3.5 py-2 text-[13px] font-medium whitespace-nowrap hover:bg-cinza-claro"
                           >
-                            Revisar
+                            <RotuloLink>Revisar</RotuloLink>
                           </Link>
                         </td>
                       </tr>
@@ -262,7 +264,7 @@ function Filtro({ href, ativo, children }: { href: string; ativo: boolean; child
         (ativo ? "border-trinitas-profundo bg-trinitas-profundo text-white" : "border-borda text-cinza-escuro hover:bg-cinza-claro")
       }
     >
-      {children}
+      <RotuloLink>{children}</RotuloLink>
     </Link>
   );
 }

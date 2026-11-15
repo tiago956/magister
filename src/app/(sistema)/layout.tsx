@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { ehGestor, NOME_PAPEL, perfilAtual } from "@/lib/dados";
 import Menu from "./menu";
+import BotaoEnviar from "@/components/botao-enviar";
 
 export default async function SistemaLayout({ children }: { children: React.ReactNode }) {
   const perfil = await perfilAtual();
@@ -21,9 +22,9 @@ export default async function SistemaLayout({ children }: { children: React.Reac
             <span className="text-cinza-medio">{NOME_PAPEL[perfil.papel]}</span>
           </div>
           <form action="/auth/sair" method="post">
-            <button type="submit" className="rounded-sm border border-borda px-3 py-2 text-xs font-medium hover:bg-cinza-claro">
+            <BotaoEnviar pendente="Saindo..." className="rounded-sm border border-borda px-3 py-2 text-xs font-medium hover:bg-cinza-claro">
               Sair
-            </button>
+            </BotaoEnviar>
           </form>
         </div>
       </aside>

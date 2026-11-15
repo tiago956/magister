@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { IndicadorAoLado } from "@/components/link-status";
 
 type Item = { href: string; nome: string; emBreve?: boolean; soGestao?: boolean };
 
@@ -32,7 +33,10 @@ export default function Menu({ gestor }: { gestor: boolean }) {
             }
           >
             {i.nome}
-            {i.emBreve && <span className="text-[11px] font-normal text-cinza-medio">em breve</span>}
+            <span className="flex items-center gap-2">
+              {i.emBreve && <span className="text-[11px] font-normal text-cinza-medio">em breve</span>}
+              <IndicadorAoLado />
+            </span>
           </Link>
         );
       })}
