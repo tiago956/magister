@@ -11,7 +11,7 @@ Endereço previsto: **magister.trinitasvillabranca.com.br**
 - **Painel**: cada professor vê as suas aulas da semana, com o modelo de aula de cada uma.
 - **Atribuições** (coordenação e direção): atribuir regente (uma turma, várias matérias) ou especialista (uma matéria, várias turmas), grade semanal por turma, quadro de cobertura e papéis de acesso da equipe.
 
-- **Planos de aula** (etapa 2): cada professor vê as aulas da semana que está planejando, com prazo de envio (quarta-feira anterior) e situação de cada plano. O editor segue o modelo certo para a turma e a matéria (sete momentos, quatro momentos, Artes e Música ou registro de leitura), mostra a barra de tempo e a orientação de cada momento, oferece o banco de catecismos e permite salvar rascunho ou enviar para revisão.
+- **Planos de aula** (etapa 2): cada professor vê as aulas da semana que está planejando, com prazo de envio (quarta-feira anterior) e situação de cada plano. O editor segue o modelo certo para a matéria: modelo padrão (Catecismo, Faça Agora, Nosso objetivo hoje, Estratégias, Quick Check e Fechamento) para todas as matérias, modelo próprio para Música e para Educação Física, e registro de livro e páginas para Leitura, mostra a barra de tempo e a orientação de cada momento, oferece o banco de catecismos e permite salvar rascunho ou enviar para revisão.
 - **Revisão** (coordenação e direção): planos aguardando revisão por turma, aprovação em lote, comentários por momento, pedido de ajustes e lista de quem ainda não enviou.
 - **Depois da aula**: o professor registra se a aula foi dada como planejada, parcialmente ou não foi dada.
 
@@ -33,6 +33,7 @@ No painel do Supabase, abra **SQL Editor** e execute, nesta ordem, o conteúdo d
 2. `supabase/migrations/20261114000002_dados_iniciais.sql` (7 turmas, 12 matérias e a grade semanal)
 3. `supabase/migrations/20261114000003_eh_gestor_fora_da_api.sql` (ajuste de segurança)
 4. `supabase/migrations/20261115000001_planos_de_aula.sql` (planos, comentários, catecismos e regras do fluxo)
+5. `supabase/migrations/20261115000002_modelo_padrao.sql` e `20261115000003_modelo_padrao_disciplinas.sql` (modelo padrão de plano de aula)
 
 No projeto `magister` do Supabase (região São Paulo) isso já foi feito.
 

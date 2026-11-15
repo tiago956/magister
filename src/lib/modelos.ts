@@ -12,6 +12,8 @@ export type Campo = {
 export type Momento = {
   id: string;
   nome: string;
+  /** Número exibido antes do nome; sem número, o bloco aparece sem numeração. */
+  numero?: string;
   min: number;
   guia: string;
   campos: Campo[];
@@ -164,6 +166,67 @@ const artesMusica = (segmento: Segmento): Momento[] => [
   },
 ];
 
+/** Modelo padrão: estrutura da Classical Press, com o Catecismo na abertura. */
+const PADRAO: Momento[] = [
+  {
+    id: "materiais",
+    nome: "Materiais utilizados",
+    min: 0,
+    guia: "Livros (com título e páginas), caderno e demais materiais necessários para a aula.",
+    campos: [{ id: "materiais", label: "Materiais", ph: "Exemplo: Livro “No Princípio era a Palavra”, p. 11 a 15; caderno", linhas: 2 }],
+  },
+  {
+    ...catecismo(0),
+    guia: "Recitação de pé, na abertura da aula, para focar a turma e gravar a matéria na memória de longo prazo.",
+  },
+  {
+    id: "faca_agora",
+    numero: "1",
+    nome: "Do Now (Faça Agora)",
+    min: 0,
+    guia: "Atividade breve no início da aula para engajar os alunos e prepará-los para o conteúdo. Pode ser uma pergunta, um quebra-cabeça, um problema ou uma tarefa ligada ao tópico; em geral revisa conhecimentos anteriores ou desperta o interesse.",
+    campos: [{ id: "atividade", label: "Atividade", linhas: 3 }],
+  },
+  {
+    id: "objetivo",
+    numero: "2",
+    nome: "Nosso objetivo hoje",
+    min: 0,
+    guia: "Estabeleça o objetivo principal da aula, para que os alunos entendam o que vão aprender e por que é importante. Escreva como será dito à turma.",
+    campos: [{ id: "objetivo", label: "Objetivo, como será dito à turma", ph: "“Nosso objetivo de hoje é…”", linhas: 3 }],
+  },
+  {
+    id: "estrategias",
+    numero: "3",
+    nome: "Estratégias",
+    min: 0,
+    guia: "Modelo instrutivo, que conduz o aluno a imitar o que é bom e desprezar o que é ruim: conceito resumido, vocabulário, recursos criativos, prática guiada e prática independente.",
+    campos: [
+      { id: "conceito", label: "Conceito resumido (mini lição)", ph: "Versão resumida do conceito, com os passos e as páginas do texto-base", linhas: 5 },
+      { id: "vocabulario", label: "Vocabulário necessário", ph: "Termos que os alunos precisam entender para acompanhar a aula", linhas: 2 },
+      { id: "recursos", label: "Recursos criativos", ph: "Materiais ou métodos criativos usados durante a aula", linhas: 2 },
+      { id: "pratica_guiada", label: "Prática guiada", ph: "Atividade prática feita com a orientação do professor", linhas: 3 },
+      { id: "pratica_independente", label: "Prática independente", ph: "Exercícios, tarefas ou atividades individuais", linhas: 3 },
+    ],
+  },
+  {
+    id: "quick_check",
+    numero: "4",
+    nome: "Quick Check",
+    min: 0,
+    guia: "Avaliação rápida para verificar a compreensão dos alunos: uma pergunta curta, uma questão para discussão ou outra forma breve de checagem.",
+    campos: [{ id: "verificacao", label: "Pergunta ou atividade de verificação", linhas: 2 }],
+  },
+  {
+    id: "fechamento",
+    numero: "5",
+    nome: "Fechamento",
+    min: 0,
+    guia: "Encerramento da aula, consolidando o que foi aprendido.",
+    campos: [{ id: "fechamento", label: "Fechamento", linhas: 2 }],
+  },
+];
+
 const LEITURA: Momento[] = [
   {
     id: "leitura",
@@ -179,6 +242,8 @@ const LEITURA: Momento[] = [
 
 export function momentosDo(modelo: ModeloAula, segmento: Segmento): Momento[] {
   switch (modelo) {
+    case "padrao":
+      return PADRAO;
     case "sete_momentos":
       return SETE;
     case "quatro_momentos":
@@ -208,6 +273,12 @@ export function limparConteudo(bruto: unknown, momentos: Momento[]): Conteudo {
     if (Object.keys(bloco).length) limpo[m.id] = bloco;
   }
   return limpo;
+}
+
+/** Número de exibição de cada momento (modelos antigos numeram em sequência). */
+export function numeroDo(m: Momento, i: number, momentos: Momento[]) {
+  if (momentos.some((x) => x.numero)) return m.numero ?? null;
+  return momentos.length > 1 ? String(i + 1).padStart(2, "0") : null;
 }
 
 /** Momentos sem nenhum campo preenchido. */

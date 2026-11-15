@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { ModeloAula } from "@/lib/dados";
-import type { Conteudo, Momento } from "@/lib/modelos";
+import { numeroDo, type Conteudo, type Momento } from "@/lib/modelos";
 import type { StatusPlano } from "@/lib/status";
 import { comentar, registrarAula, revisarPlano, salvarPlano } from "../../actions";
 
@@ -58,16 +58,17 @@ export default function Editor(props: {
         {!leitura && (
           <section className="flex flex-col gap-4 border border-borda bg-white p-5">
             <label className="flex flex-col gap-1.5 text-[13px] font-medium text-cinza-escuro">
-              Tópico do Plano Mestre
+              Título da aula
               <input
                 name="topico"
                 value={topico}
                 onChange={(e) => setTopico(e.target.value)}
                 disabled={!editavel}
-                placeholder="Exemplo: Subtração sem reagrupamento"
+                placeholder="Exemplo: Semana 1 | Aula 1: Letras maiúsculas e palavras com L ou U"
                 className={campo}
               />
             </label>
+            {total > 0 && (
             <div className="flex flex-col gap-2">
               <div className="flex flex-wrap justify-between gap-2 text-[13px]">
                 <strong>Tempo da aula</strong>
@@ -101,6 +102,7 @@ export default function Editor(props: {
                 )}
               </div>
             </div>
+            )}
           </section>
         )}
 
@@ -110,8 +112,8 @@ export default function Editor(props: {
             <article key={m.id} className="flex flex-wrap border border-borda bg-white">
               <div className="flex min-w-0 flex-[999_1_420px] flex-col gap-4 p-5 sm:p-6">
                 <div className="flex flex-wrap items-baseline gap-3">
-                  {!leitura && (
-                    <span className="font-display text-sm font-bold text-trinitas-profundo">{String(i + 1).padStart(2, "0")}</span>
+                  {numeroDo(m, i, momentos) && (
+                    <span className="font-display text-sm font-bold text-trinitas-profundo">{numeroDo(m, i, momentos)}.</span>
                   )}
                   <h2 className="text-lg">{m.nome}</h2>
                   {m.min > 0 && <span className="text-[13px] text-cinza-medio">{m.min} min</span>}

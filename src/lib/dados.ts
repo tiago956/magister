@@ -1,7 +1,7 @@
 import { criarClienteServidor } from "@/lib/supabase/server";
 
 export type Papel = "professor" | "coordenacao" | "direcao" | "secretaria";
-export type ModeloAula = "sete_momentos" | "quatro_momentos" | "artes_musica" | "leitura";
+export type ModeloAula = "padrao" | "sete_momentos" | "quatro_momentos" | "artes_musica" | "leitura";
 
 export type Perfil = {
   id: string;
@@ -15,9 +15,10 @@ export type Perfil = {
 export const DIAS = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta"] as const;
 
 export const NOME_MODELO: Record<ModeloAula, string> = {
+  padrao: "Modelo padrão",
   sete_momentos: "Sete momentos",
   quatro_momentos: "Quatro momentos",
-  artes_musica: "Artes e Música",
+  artes_musica: "Modelo de Música",
   leitura: "Registro de leitura",
 };
 
