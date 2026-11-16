@@ -11,6 +11,7 @@ const ITENS: Item[] = [
   { href: "/planos", nome: "Planos de aula" },
   { href: "/revisao", nome: "Revisão", soGestao: true },
   { href: "/calendario", nome: "Calendário" },
+  { href: "/arquivos", nome: "Arquivos" },
   { href: "/onboarding", nome: "Onboarding" },
   { href: "/treinamentos", nome: "Treinamentos" },
   { href: "/atribuicoes", nome: "Atribuições", soGestao: true },
