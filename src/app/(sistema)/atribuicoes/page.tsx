@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { criarClienteServidor } from "@/lib/supabase/server";
-import { DIAS, ehGestor, hora, NOME_PAPEL, perfilAtual, type Papel, type Perfil } from "@/lib/dados";
-import { alterarPapel, atribuirEspecialista, atribuirRegente, salvarMatriz } from "./actions";
+import { DIAS, ehGestor, FUNCOES, hora, NOME_PAPEL, perfilAtual, tem, type Perfil } from "@/lib/dados";
+import { atribuirEspecialista, atribuirRegente, salvarFuncoes, salvarMatriz } from "./actions";
 import BotaoEnviar from "@/components/botao-enviar";
 import { RotuloLink } from "@/components/link-status";
 
@@ -37,7 +37,7 @@ export default async function AtribuicoesPage({
   const [{ data: t }, { data: d }, { data: p }, { data: a }, { data: g }] = await Promise.all([
     supabase.from("turmas").select("id, codigo, nome, ordem").order("ordem"),
     supabase.from("disciplinas").select("id, nome, do_regente, ordem").order("ordem"),
-    supabase.from("perfis").select("id, nome, email, papel, perfil_docente, ativo").eq("ativo", true).order("nome"),
+    supabase.from("perfis").select("id, nome, email, papel, funcoes, perfil_docente, ativo").eq("ativo", true).order("nome"),
     supabase.from("atribuicoes").select("turma_id, disciplina_id, professor_id"),
     supabase.from("grade_horaria").select("turma_id, dia_semana, inicio, fim, disciplina_id, rotulo").order("inicio"),
   ]);
@@ -61,6 +61,27 @@ export default async function AtribuicoesPage({
     const pid = dono.get(`${s.turma_id}:${s.disciplina_id}`);
     if (pid) aulasPorProfessor.set(pid, (aulasPorProfessor.get(pid) ?? 0) + 1);
   }
+  // O que cada pessoa leciona, a partir das atribuições (uma pessoa pode ser regente e especialista ao mesmo tempo).
+  const regenteEm = new Map<string, Set<number>>();
+  const especialistaEm = new Map<string, Set<number>>();
+  const discPorId = new Map(disciplinas.map((x) => [x.id, x]));
+  for (const x of atribuicoes) {
+    const alvo = discPorId.get(x.disciplina_id)?.do_regente ? regenteEm : especialistaEm;
+    const valor = alvo === regenteEm ? x.turma_id : x.disciplina_id;
+    if (!alvo.has(x.professor_id)) alvo.set(x.professor_id, new Set());
+    alvo.get(x.professor_id)!.add(valor);
+  }
+  const nomeTurma = new Map(turmas.map((x) => [x.id, x]));
+  const leciona = (id: string) => {
+    const partes: string[] = [];
+    const r = [...(regenteEm.get(id) ?? [])].map((i) => nomeTurma.get(i)).filter((x) => !!x).sort((a, b) => a!.ordem - b!.ordem);
+    const e = [...(especialistaEm.get(id) ?? [])].map((i) => discPorId.get(i)).filter((x) => !!x).sort((a, b) => a!.ordem - b!.ordem);
+    if (r.length) partes.push(`Regente: ${r.map((x) => x!.nome).join(", ")}`);
+    if (e.length) partes.push(`Especialista: ${e.map((x) => x!.nome).join(", ")}`);
+    return partes;
+  };
+  const souDirecao = tem(perfil, "direcao");
+
   const lacunas = turmas.reduce(
     (n, tu) => n + [...(nasTurmas.get(tu.id) ?? [])].filter((di) => !dono.has(`${tu.id}:${di}`)).length,
     0,
@@ -244,16 +265,20 @@ export default async function AtribuicoesPage({
       <section className="border border-borda bg-white">
         <div className="border-b border-borda px-5 py-4">
           <h2 className="text-lg">Equipe</h2>
-          <p className="mt-1 text-sm text-cinza-medio">Cada pessoa aparece aqui depois do primeiro login com a conta Google da escola.</p>
+          <p className="mt-1 text-sm text-cinza-medio">
+            Cada pessoa aparece aqui depois do primeiro login com a conta Google da escola. Uma pessoa pode acumular funções (por exemplo,
+            Coordenação e Professor(a)) e lecionar várias matérias; o acesso é a soma das funções marcadas.
+            {!souDirecao && " Só a direção concede ou retira a função Direção."}
+          </p>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[720px] border-collapse text-sm">
+          <table className="w-full min-w-[860px] border-collapse text-sm">
             <thead>
               <tr className="bg-cinza-claro text-left">
                 <th scope="col" className="border-b border-borda px-5 py-2.5 text-[13px] font-semibold">Nome</th>
-                <th scope="col" className="border-b border-borda px-3 py-2.5 text-[13px] font-semibold">Perfil</th>
+                <th scope="col" className="border-b border-borda px-3 py-2.5 text-[13px] font-semibold">Leciona</th>
                 <th scope="col" className="border-b border-borda px-3 py-2.5 text-[13px] font-semibold">Aulas por semana</th>
-                <th scope="col" className="border-b border-borda px-3 py-2.5 text-[13px] font-semibold">Acesso</th>
+                <th scope="col" className="border-b border-borda px-3 py-2.5 text-[13px] font-semibold">Funções</th>
               </tr>
             </thead>
             <tbody>
@@ -263,17 +288,36 @@ export default async function AtribuicoesPage({
                     <span className="block font-semibold">{x.nome}</span>
                     <span className="block text-xs text-cinza-medio">{x.email}</span>
                   </td>
-                  <td className="border-b border-borda px-3 py-3 text-cinza-escuro">
-                    {x.perfil_docente === "regente" ? "Regente" : x.perfil_docente === "especialista" ? "Especialista" : "—"}
+                  <td className="border-b border-borda px-3 py-3 text-[13px] text-cinza-escuro">
+                    {leciona(x.id).length ? leciona(x.id).map((l) => <span key={l} className="block">{l}</span>) : "—"}
                   </td>
                   <td className="border-b border-borda px-3 py-3 tabular-nums">{aulasPorProfessor.get(x.id) ?? 0}</td>
                   <td className="border-b border-borda px-3 py-3">
-                    <form action={alterarPapel} className="flex flex-wrap items-center gap-2">
+                    <form action={salvarFuncoes} className="flex flex-wrap items-center gap-x-3 gap-y-2">
                       <input type="hidden" name="id" value={x.id} />
-                      <select name="papel" defaultValue={x.papel} aria-label={`Acesso de ${x.nome}`} className={campo + " py-1.5"}>
-                        {(Object.keys(NOME_PAPEL) as Papel[]).map((k) => <option key={k} value={k}>{NOME_PAPEL[k]}</option>)}
-                      </select>
-                      <BotaoEnviar className="rounded-sm border border-borda px-3 py-1.5 text-xs font-medium hover:bg-cinza-claro">Alterar</BotaoEnviar>
+                      <input type="hidden" name="nome" value={x.nome} />
+                      <fieldset className="flex flex-wrap gap-x-3 gap-y-1.5">
+                        <legend className="sr-only">Funções de {x.nome}</legend>
+                        {FUNCOES.map((k) => {
+                          const marcada = x.funcoes.includes(k);
+                          const travada = k === "direcao" && !souDirecao;
+                          return (
+                            <label key={k} className={"flex items-center gap-1.5 text-[13px] " + (travada ? "text-cinza-medio" : "")}>
+                              <input
+                                type="checkbox"
+                                name="funcao"
+                                value={k}
+                                defaultChecked={marcada}
+                                disabled={travada}
+                                className="h-4 w-4 accent-trinitas-profundo"
+                              />
+                              {travada && marcada && <input type="hidden" name="funcao" value={k} />}
+                              {NOME_PAPEL[k]}
+                            </label>
+                          );
+                        })}
+                      </fieldset>
+                      <BotaoEnviar className="rounded-sm border border-borda px-3 py-1.5 text-xs font-medium hover:bg-cinza-claro">Salvar</BotaoEnviar>
                     </form>
                   </td>
                 </tr>

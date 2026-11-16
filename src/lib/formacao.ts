@@ -64,9 +64,9 @@ export function idDoYoutube(entrada: string): string | null {
 }
 
 /** O curso é destinado a esta pessoa (independe de estar publicado). */
-export function ehPublicoDo(curso: Curso, perfil: Pick<Perfil, "id" | "papel">, pessoasDoCurso: Set<string>) {
+export function ehPublicoDo(curso: Curso, perfil: Pick<Perfil, "id" | "funcoes">, pessoasDoCurso: Set<string>) {
   if (curso.publico === "todos") return true;
-  if (curso.publico === "papeis") return curso.papeis.includes(perfil.papel);
+  if (curso.publico === "papeis") return curso.papeis.some((p) => perfil.funcoes.includes(p));
   return pessoasDoCurso.has(perfil.id);
 }
 

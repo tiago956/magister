@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { criarClienteServidor } from "@/lib/supabase/server";
-import { ehGestor, NOME_PAPEL, perfilAtual, type Papel } from "@/lib/dados";
+import { ehGestor, NOME_PAPEL, nomeFuncoes, perfilAtual, type Papel } from "@/lib/dados";
 import { hojeIso } from "@/lib/semanas";
 import {
   CAMPOS_CURSO,
@@ -18,7 +18,7 @@ import { RotuloLink } from "@/components/link-status";
 
 export const metadata: Metadata = { title: "Formação da equipe" };
 
-type Pessoa = { id: string; nome: string; papel: Papel };
+type Pessoa = { id: string; nome: string; funcoes: Papel[] };
 type Prog = { aula_id: number; perfil_id: string; percentual: number; concluida_em: string | null; atualizado_em: string };
 
 export default async function FormacaoPage({
@@ -46,7 +46,7 @@ export default async function FormacaoPage({
     supabase.from("curso_aulas").select("id, curso_id, titulo, ordem").order("ordem").order("id"),
     supabase.from("aula_progresso").select("aula_id, perfil_id, percentual, concluida_em, atualizado_em"),
     supabase.from("curso_pessoas").select("curso_id, perfil_id"),
-    supabase.from("perfis").select("id, nome, papel").eq("ativo", true).order("nome"),
+    supabase.from("perfis").select("id, nome, funcoes").eq("ativo", true).order("nome"),
   ]);
   const cursos = (c ?? []) as Curso[];
   const aulas = (a ?? []) as { id: number; curso_id: number; titulo: string; ordem: number }[];
@@ -239,7 +239,7 @@ export default async function FormacaoPage({
                         <Link href={`/formacao/pessoas/${p.id}`} className="font-medium hover:text-trinitas-profundo">
                           <RotuloLink>{p.nome}</RotuloLink>
                         </Link>
-                        <span className="block text-xs text-cinza-medio">{NOME_PAPEL[p.papel]}</span>
+                        <span className="block text-xs text-cinza-medio">{nomeFuncoes(p.funcoes)}</span>
                       </th>
                       {publicados.map((curso) => {
                         if (!ehPublicoDo(curso, p, pessoasDo.get(curso.id) ?? new Set()))

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { criarClienteServidor } from "@/lib/supabase/server";
-import { ehGestor, perfilAtual } from "@/lib/dados";
+import { ehGestor, FUNCOES, perfilAtual, tem, type Papel } from "@/lib/dados";
 
 async function exigirGestao() {
   const perfil = await perfilAtual();
@@ -61,7 +61,6 @@ export async function atribuirRegente(form: FormData) {
     const { error } = await supabase.from("atribuicoes").upsert(linhas, { onConflict: "turma_id,disciplina_id" });
     if (error) throw new Error("Não foi possível atribuir o regente.");
   }
-  await supabase.from("perfis").update({ perfil_docente: "regente" }).eq("id", professor_id);
   voltar(`Regente atribuído a ${ids.length} matérias da turma.`);
 }
 
@@ -79,17 +78,26 @@ export async function atribuirEspecialista(form: FormData) {
     const { error } = await supabase.from("atribuicoes").upsert(linhas, { onConflict: "turma_id,disciplina_id" });
     if (error) throw new Error("Não foi possível atribuir o especialista.");
   }
-  await supabase.from("perfis").update({ perfil_docente: "especialista" }).eq("id", professor_id);
   voltar(`Especialista atribuído em ${ids.length} turmas.`);
 }
 
-/** Papel de acesso de uma pessoa da equipe. */
-export async function alterarPapel(form: FormData) {
-  const supabase = await exigirGestao();
+/** Funções de uma pessoa da equipe (pode acumular várias, ex.: coordenação e professor). */
+export async function salvarFuncoes(form: FormData) {
+  const perfil = await perfilAtual();
+  if (!ehGestor(perfil)) throw new Error("Apenas a coordenação e a direção podem alterar funções.");
+  const supabase = await criarClienteServidor();
   const id = String(form.get("id") ?? "");
-  const papel = String(form.get("papel") ?? "");
-  if (!["professor", "coordenacao", "direcao", "secretaria"].includes(papel)) voltar("Papel inválido.");
-  const { error } = await supabase.from("perfis").update({ papel }).eq("id", id);
-  if (error) throw new Error("Não foi possível alterar o papel.");
-  voltar("Papel atualizado.");
+  const nome = String(form.get("nome") ?? "");
+  const funcoes = form.getAll("funcao").map(String).filter((x): x is Papel => FUNCOES.includes(x as Papel));
+  if (!funcoes.length) voltar(`Marque ao menos uma função para ${nome}.`);
+
+  const { data: atual } = await supabase.from("perfis").select("funcoes").eq("id", id).maybeSingle();
+  const tinhaDirecao = ((atual?.funcoes ?? []) as Papel[]).includes("direcao");
+  if (tinhaDirecao !== funcoes.includes("direcao") && !tem(perfil, "direcao")) {
+    voltar("Só a direção pode conceder ou retirar a função Direção.");
+  }
+
+  const { error } = await supabase.from("perfis").update({ funcoes }).eq("id", id);
+  if (error) voltar(error.message.includes("direção") ? error.message : `Não foi possível alterar as funções de ${nome}.`);
+  voltar(`Funções de ${nome} atualizadas.`);
 }

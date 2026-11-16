@@ -83,7 +83,7 @@ export default async function CalendarioPage({
 
   // Prazos de planejamento: só em semanas com aula.
   const prazos: Prazo[] = [];
-  if (perfil.papel !== "secretaria" && !tipoSel) {
+  if (perfil.funcoes.some((f) => f !== "secretaria") && !tipoSel) {
     for (let dia = gradeIni; dia <= gradeFim; dia = somarDias(dia, 1)) {
       if (diaDaSemana(dia) !== 2) continue;
       const alvo = somarDias(dia, 5);
@@ -373,7 +373,7 @@ export default async function CalendarioPage({
             <>
               <p className="text-sm leading-relaxed text-cinza-escuro">
                 Este é o seu link pessoal. Assinado uma vez, o calendário da escola aparece no seu Google Agenda e no celular.
-                {perfil.papel === "professor" && " Você recebe os eventos da escola toda e os das suas turmas."}
+                {perfil.funcoes.every((f) => f === "professor") && " Você recebe os eventos da escola toda e os das suas turmas."}
               </p>
               <CopiarLink url={linkAgenda} />
               <details open={sp.assinar === "1"} className="text-sm">

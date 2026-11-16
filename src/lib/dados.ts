@@ -7,7 +7,8 @@ export type Perfil = {
   id: string;
   nome: string;
   email: string;
-  papel: Papel;
+  papel: Papel; // função principal (calculada a partir de "funcoes")
+  funcoes: Papel[];
   perfil_docente: "regente" | "especialista" | null;
   ativo: boolean;
 };
@@ -35,8 +36,20 @@ export function hora(t: string) {
   return `${Number(h)}h${m}`;
 }
 
+export const FUNCOES: Papel[] = ["direcao", "coordenacao", "secretaria", "professor"];
+
+/** A pessoa tem esta função (entre todas as que acumula). */
+export function tem(p: Pick<Perfil, "funcoes"> | null, ...f: Papel[]) {
+  return !!p && f.some((x) => p.funcoes.includes(x));
+}
+
+/** "Coordenação · Professor(a)" */
+export function nomeFuncoes(funcoes: Papel[]) {
+  return FUNCOES.filter((f) => funcoes.includes(f)).map((f) => NOME_PAPEL[f]).join(" · ");
+}
+
 export function ehGestor(p: Perfil | null) {
-  return !!p && p.ativo && (p.papel === "coordenacao" || p.papel === "direcao");
+  return !!p && p.ativo && tem(p, "coordenacao", "direcao");
 }
 
 /** Perfil de quem está logado (ou null). */
@@ -47,7 +60,7 @@ export async function perfilAtual(): Promise<Perfil | null> {
   if (!id) return null;
   const { data } = await supabase
     .from("perfis")
-    .select("id, nome, email, papel, perfil_docente, ativo")
+    .select("id, nome, email, papel, funcoes, perfil_docente, ativo")
     .eq("id", id)
     .single();
   return (data as Perfil) ?? null;

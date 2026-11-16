@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { criarClienteServidor } from "@/lib/supabase/server";
-import { ehGestor, NOME_PAPEL, perfilAtual, type Papel } from "@/lib/dados";
+import { ehGestor, nomeFuncoes, perfilAtual, type Papel } from "@/lib/dados";
 import { hojeIso } from "@/lib/semanas";
 import {
   CAMPOS_CURSO,
@@ -29,7 +29,7 @@ export default async function PessoaPage({ params }: { params: Promise<{ id: str
   if (!ehGestor(eu)) return <p className="text-cinza-escuro">Esta área é da direção e da coordenação.</p>;
 
   const supabase = await criarClienteServidor();
-  const { data: pessoa } = await supabase.from("perfis").select("id, nome, papel, email").eq("id", id).maybeSingle();
+  const { data: pessoa } = await supabase.from("perfis").select("id, nome, funcoes, email").eq("id", id).maybeSingle();
   if (!pessoa) notFound();
 
   const [{ data: c }, { data: cp }, { data: a }, { data: pr }] = await Promise.all([
@@ -39,7 +39,7 @@ export default async function PessoaPage({ params }: { params: Promise<{ id: str
     supabase.from("aula_progresso").select(CAMPOS_PROGRESSO).eq("perfil_id", id),
   ]);
   const nominal = new Set((cp ?? []).map((x) => x.curso_id as number));
-  const cursos = ((c ?? []) as Curso[]).filter((x) => ehPublicoDo(x, { id, papel: pessoa.papel as Papel }, nominal.has(x.id) ? new Set([id]) : new Set()));
+  const cursos = ((c ?? []) as Curso[]).filter((x) => ehPublicoDo(x, { id, funcoes: pessoa.funcoes as Papel[] }, nominal.has(x.id) ? new Set([id]) : new Set()));
   const aulas = (a ?? []) as { id: number; curso_id: number; titulo: string; pergunta: string | null }[];
   const prog = new Map(((pr ?? []) as Progresso[]).map((x) => [x.aula_id, x]));
   const hoje = hojeIso();
@@ -51,7 +51,7 @@ export default async function PessoaPage({ params }: { params: Promise<{ id: str
           <RotuloLink>Voltar à formação da equipe</RotuloLink>
         </Link>
         <h1 className="text-3xl">{pessoa.nome}</h1>
-        <span className="text-[13px] text-cinza-medio">{NOME_PAPEL[pessoa.papel as Papel]}</span>
+        <span className="text-[13px] text-cinza-medio">{nomeFuncoes(pessoa.funcoes as Papel[])}</span>
       </header>
 
       {cursos.length === 0 && <p className="text-sm text-cinza-medio">Nenhum curso publicado é destinado a esta pessoa.</p>}
