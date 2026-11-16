@@ -15,6 +15,7 @@ import {
 } from "@/lib/semanas";
 import { Selo, situacao, type StatusPlano } from "@/lib/status";
 import { RotuloLink } from "@/components/link-status";
+import { COR_TIPO, doDia, eventosEntre, suspensao } from "@/lib/calendario";
 
 export const metadata: Metadata = { title: "Planos de aula" };
 
@@ -24,6 +25,7 @@ type Aula = {
   inicio: string;
   fim: string;
   turma: string;
+  turma_id: number;
   disciplina: string;
   modelo: ModeloAula;
 };
@@ -48,11 +50,17 @@ export default async function PlanosPage({ searchParams }: { searchParams: Promi
   const supabase = await criarClienteServidor();
   const { data: a } = await supabase
     .from("aulas_semanais")
-    .select("grade_id, dia_semana, inicio, fim, turma, disciplina, modelo")
+    .select("grade_id, dia_semana, inicio, fim, turma, turma_id, disciplina, modelo")
     .eq("professor_id", perfil.id)
     .order("dia_semana")
     .order("inicio");
-  const aulas = (a ?? []) as Aula[];
+  const todas = (a ?? []) as Aula[];
+
+  // Aulas em dias sem aula (feriado, recesso, evento) ficam fora do planejamento.
+  const eventos = await eventosEntre(supabase, semana, somarDias(semana, 4));
+  const motivo = (x: Aula) => suspensao(eventos, dataDaAula(semana, x.dia_semana), x.turma_id);
+  const aulas = todas.filter((x) => !motivo(x));
+  const minhasTurmas = [...new Set(todas.map((x) => x.turma_id))];
 
   const { data: p } = aulas.length
     ? await supabase
@@ -90,7 +98,11 @@ export default async function PlanosPage({ searchParams }: { searchParams: Promi
         </nav>
       </header>
 
-      {aulas.length === 0 ? (
+      {todas.length > 0 && aulas.length === 0 ? (
+        <section className="border border-borda border-l-4 border-l-trinitas bg-white p-6">
+          <p className="leading-relaxed text-cinza-escuro">Não há aulas nesta semana pelo calendário escolar, então não há planos a enviar.</p>
+        </section>
+      ) : todas.length === 0 ? (
         <section className="border border-borda bg-white p-6">
           <p className="leading-relaxed text-cinza-escuro">
             Nenhuma aula atribuída a você.{" "}
@@ -131,15 +143,39 @@ export default async function PlanosPage({ searchParams }: { searchParams: Promi
 
           <section className="flex flex-col gap-6" aria-label="Aulas da semana">
             {DIAS.map((dia, i) => {
-              const doDia = aulas.filter((x) => x.dia_semana === i + 1);
-              if (!doDia.length) return null;
+              const daqui = todas.filter((x) => x.dia_semana === i + 1);
+              if (!daqui.length) return null;
+              const data = dataDaAula(semana, i + 1);
+              const evs = doDia(eventos, data).filter((e) => !e.turmas.length || e.turmas.some((t) => minhasTurmas.includes(t)));
               return (
                 <div key={dia} className="border border-borda bg-white">
-                  <h2 className="border-b border-borda px-5 py-3 font-sans text-sm font-semibold">
-                    {dia}, {dataCurta(dataDaAula(semana, i + 1))}
-                  </h2>
+                  <div className="flex flex-wrap items-center gap-2 border-b border-borda px-5 py-3">
+                    <h2 className="mr-2 font-sans text-sm font-semibold">
+                      {dia}, {dataCurta(data)}
+                    </h2>
+                    {evs.map((e) => (
+                      <span key={e.id} className={"rounded-sm border-l-2 px-1.5 py-0.5 text-xs " + COR_TIPO[e.tipo]}>
+                        {e.titulo}
+                      </span>
+                    ))}
+                  </div>
                   <ul>
-                    {doDia.map((x) => {
+                    {daqui.map((x) => {
+                      const sem = motivo(x);
+                      if (sem) {
+                        return (
+                          <li key={x.grade_id} className="flex flex-wrap items-center gap-4 border-b border-borda bg-cinza-claro px-5 py-3.5 text-cinza-medio last:border-b-0">
+                            <span className="w-28 text-[13px] tabular-nums">
+                              {hora(x.inicio)} às {hora(x.fim)}
+                            </span>
+                            <div className="flex min-w-[180px] flex-1 flex-col gap-0.5">
+                              <span className="text-[15px] font-semibold line-through decoration-1">{x.disciplina}</span>
+                              <span className="text-[13px]">{x.turma}</span>
+                            </div>
+                            <span className="text-[13px]">Sem aula · {sem.titulo}</span>
+                          </li>
+                        );
+                      }
                       const s = situacao(planos.get(x.grade_id), x.modelo);
                       return (
                         <li key={x.grade_id} className="flex flex-wrap items-center gap-4 border-b border-borda px-5 py-3.5 last:border-b-0">

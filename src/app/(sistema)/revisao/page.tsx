@@ -17,6 +17,7 @@ import type { StatusPlano } from "@/lib/status";
 import { aprovarEmLote } from "../planos/actions";
 import BotaoEnviar from "@/components/botao-enviar";
 import { RotuloLink } from "@/components/link-status";
+import { eventosEntre, suspensao } from "@/lib/calendario";
 
 export const metadata: Metadata = { title: "Revisão" };
 
@@ -27,6 +28,7 @@ type Aula = {
   turma: string;
   turma_codigo: string;
   turma_ordem: number;
+  turma_id: number;
   disciplina: string;
   modelo: ModeloAula;
   professor_id: string | null;
@@ -55,18 +57,20 @@ export default async function RevisaoPage({
   const semana = ehSegunda(sp.semana) ? sp.semana : semanaDePlanejamento();
   const supabase = await criarClienteServidor();
 
-  const [{ data: a }, { data: p }, { data: pessoas }] = await Promise.all([
+  const [{ data: a }, { data: p }, { data: pessoas }, eventos] = await Promise.all([
     supabase
       .from("aulas_semanais")
-      .select("grade_id, dia_semana, inicio, turma, turma_codigo, turma_ordem, disciplina, modelo, professor_id")
+      .select("grade_id, dia_semana, inicio, turma, turma_codigo, turma_ordem, turma_id, disciplina, modelo, professor_id")
       .neq("modelo", "leitura")
       .order("turma_ordem")
       .order("dia_semana")
       .order("inicio"),
     supabase.from("planos_aula").select("id, grade_id, status, enviado_em").eq("semana_inicio", semana),
     supabase.from("perfis").select("id, nome"),
+    eventosEntre(supabase, semana, somarDias(semana, 4)),
   ]);
-  const aulas = (a ?? []) as Aula[];
+  // Aulas em dias sem aula pelo calendário não contam na revisão.
+  const aulas = ((a ?? []) as Aula[]).filter((x) => !suspensao(eventos, dataDaAula(semana, x.dia_semana), x.turma_id));
   const planos = new Map(((p ?? []) as Plano[]).map((x) => [x.grade_id, x]));
   const nome = new Map((pessoas ?? []).map((x) => [x.id as string, x.nome as string]));
 

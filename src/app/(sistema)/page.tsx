@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { criarClienteServidor } from "@/lib/supabase/server";
 import { DIAS, ehGestor, hora, NOME_MODELO, perfilAtual, type ModeloAula } from "@/lib/dados";
-import { dataCurta, prazoEnvio, prazoVencido, rotuloSemana, semanaDePlanejamento } from "@/lib/semanas";
+import { dataCurta, dataDaAula, hojeIso, prazoEnvio, prazoVencido, rotuloSemana, semanaDePlanejamento, somarDias } from "@/lib/semanas";
 import { RotuloLink } from "@/components/link-status";
+import { eventosEntre, NOME_TIPO, quando, suspensao } from "@/lib/calendario";
 
 export const metadata: Metadata = { title: "Painel" };
 
@@ -13,6 +14,7 @@ type Aula = {
   inicio: string;
   fim: string;
   turma: string;
+  turma_id: number;
   disciplina: string;
   modelo: ModeloAula;
 };
@@ -23,14 +25,25 @@ export default async function PainelPage() {
 
   const { data } = await supabase
     .from("aulas_semanais")
-    .select("grade_id, dia_semana, inicio, fim, turma, disciplina, modelo")
+    .select("grade_id, dia_semana, inicio, fim, turma, turma_id, disciplina, modelo")
     .eq("professor_id", perfil.id)
     .order("dia_semana")
     .order("inicio");
   const aulas = (data ?? []) as Aula[];
 
   const semana = semanaDePlanejamento();
-  const planejaveis = aulas.filter((a) => a.modelo !== "leitura");
+  const hoje = hojeIso();
+  const [eventosSemana, proximos] = await Promise.all([
+    eventosEntre(supabase, semana, somarDias(semana, 4)),
+    eventosEntre(supabase, hoje, somarDias(hoje, 14)),
+  ]);
+  const minhasTurmas = new Set(aulas.map((a) => a.turma_id));
+  const agenda = proximos
+    .filter((e) => e.data_fim >= hoje && (!e.turmas.length || ehGestor(perfil) || e.turmas.some((t) => minhasTurmas.has(t))))
+    .slice(0, 6);
+  const planejaveis = aulas.filter(
+    (a) => a.modelo !== "leitura" && !suspensao(eventosSemana, dataDaAula(semana, a.dia_semana), a.turma_id),
+  );
   const { data: pls } = planejaveis.length
     ? await supabase
         .from("planos_aula")
@@ -100,6 +113,29 @@ export default async function PainelPage() {
           <Link href={`/planos?semana=${semana}`} className="rounded-sm border-2 border-trinitas-profundo bg-trinitas-profundo px-4 py-2 text-sm font-medium text-white hover:bg-trinitas-hover">
             <RotuloLink>Abrir planos</RotuloLink>
           </Link>
+        </section>
+      )}
+
+      {agenda.length > 0 && (
+        <section className="border border-borda bg-white">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-borda px-5 py-3">
+            <h2 className="text-lg">Próximos 15 dias</h2>
+            <Link href="/calendario" className="text-sm font-medium text-trinitas-profundo hover:text-trinitas-hover">
+              <RotuloLink>Abrir calendário</RotuloLink>
+            </Link>
+          </div>
+          <ul>
+            {agenda.map((e) => (
+              <li key={e.id} className="flex flex-wrap items-baseline gap-x-4 gap-y-0.5 border-b border-borda px-5 py-2.5 text-sm last:border-b-0">
+                <span className="w-36 shrink-0 text-[13px] tabular-nums text-cinza-medio">{quando(e)}</span>
+                <span className="flex-1 font-medium">{e.titulo}</span>
+                <span className="text-xs text-cinza-medio">
+                  {NOME_TIPO[e.tipo]}
+                  {e.suspende_aulas ? " · sem aula" : ""}
+                </span>
+              </li>
+            ))}
+          </ul>
         </section>
       )}
 

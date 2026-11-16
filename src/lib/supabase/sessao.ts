@@ -1,7 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const ROTAS_PUBLICAS = ["/login", "/auth"];
+// /agenda: link de assinatura do calendário, lido pelo Google Agenda sem login.
+const ROTAS_PUBLICAS = ["/login", "/auth", "/agenda"];
 
 /**
  * Renova a sessão do Supabase a cada requisição e envia para /login
