@@ -5,6 +5,7 @@ import { DIAS, ehGestor, hora, NOME_MODELO, perfilAtual, type ModeloAula } from 
 import { dataCurta, dataDaAula, hojeIso, prazoEnvio, prazoVencido, rotuloSemana, semanaDePlanejamento, somarDias } from "@/lib/semanas";
 import { RotuloLink } from "@/components/link-status";
 import { eventosEntre, NOME_TIPO, quando, suspensao } from "@/lib/calendario";
+import { CAMPOS_CURSO, dataBr, ehPublicoDo, type Curso } from "@/lib/formacao";
 
 export const metadata: Metadata = { title: "Painel" };
 
@@ -64,6 +65,23 @@ export default async function PainelPage() {
     semProfessor = count ?? 0;
   }
 
+  // Formação: cursos publicados para esta pessoa ainda não concluídos.
+  const [{ data: cs }, { data: cpp }, { data: aas }, { data: prs }] = await Promise.all([
+    supabase.from("cursos").select(CAMPOS_CURSO).eq("publicado", true).order("prazo", { nullsFirst: false }),
+    supabase.from("curso_pessoas").select("curso_id").eq("perfil_id", perfil.id),
+    supabase.from("curso_aulas").select("id, curso_id"),
+    supabase.from("aula_progresso").select("aula_id, concluida_em").eq("perfil_id", perfil.id),
+  ]);
+  const nominal = new Set((cpp ?? []).map((x) => x.curso_id as number));
+  const concluidas = new Set((prs ?? []).filter((x) => x.concluida_em).map((x) => x.aula_id as number));
+  const cursosPendentes = ((cs ?? []) as Curso[])
+    .filter((c) => ehPublicoDo(c, perfil, nominal.has(c.id) ? new Set([perfil.id]) : new Set()))
+    .map((c) => {
+      const ids = (aas ?? []).filter((x) => x.curso_id === c.id).map((x) => x.id as number);
+      return { curso: c, faltam: ids.filter((i) => !concluidas.has(i)).length };
+    })
+    .filter((x) => x.faltam > 0);
+
   const turmas = [...new Set(aulas.map((a) => a.turma))];
   const disciplinas = [...new Set(aulas.map((a) => a.disciplina))];
   const primeiroNome = perfil.nome.split(" ")[0];
@@ -113,6 +131,25 @@ export default async function PainelPage() {
           <Link href={`/planos?semana=${semana}`} className="rounded-sm border-2 border-trinitas-profundo bg-trinitas-profundo px-4 py-2 text-sm font-medium text-white hover:bg-trinitas-hover">
             <RotuloLink>Abrir planos</RotuloLink>
           </Link>
+        </section>
+      )}
+
+      {cursosPendentes.length > 0 && (
+        <section className="border border-borda border-l-4 border-l-lima bg-white">
+          <h2 className="border-b border-borda px-5 py-3 text-lg">Sua formação</h2>
+          <ul>
+            {cursosPendentes.slice(0, 5).map(({ curso, faltam }) => (
+              <li key={curso.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-borda px-5 py-2.5 text-sm last:border-b-0">
+                <Link href={`/cursos/${curso.id}`} className="flex-1 font-medium hover:text-trinitas-profundo">
+                  <RotuloLink>{curso.titulo}</RotuloLink>
+                </Link>
+                <span className="text-xs text-cinza-medio">
+                  {faltam} {faltam === 1 ? "aula a fazer" : "aulas a fazer"}
+                  {curso.prazo && ` · prazo ${dataBr(curso.prazo)}`}
+                </span>
+              </li>
+            ))}
+          </ul>
         </section>
       )}
 
