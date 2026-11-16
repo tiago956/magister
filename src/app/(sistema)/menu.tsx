@@ -11,7 +11,10 @@ const ITENS: Item[] = [
   { href: "/planos", nome: "Planos de aula" },
   { href: "/revisao", nome: "Revisão", soGestao: true },
   { href: "/calendario", nome: "Calendário" },
+  { href: "/onboarding", nome: "Onboarding" },
+  { href: "/treinamentos", nome: "Treinamentos" },
   { href: "/atribuicoes", nome: "Atribuições", soGestao: true },
+  { href: "/formacao", nome: "Formação da equipe", soGestao: true },
 ];
 
 export default function Menu({ gestor }: { gestor: boolean }) {
