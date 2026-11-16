@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { criarClienteServidor } from "@/lib/supabase/server";
-import { ehGestor, NOME_PAPEL, perfilAtual, type Papel } from "@/lib/dados";
+import { ehGestor, NOME_PAPEL, nomeFuncoes, perfilAtual, type Papel } from "@/lib/dados";
 import { CAMPOS_AULA, CAMPOS_CURSO, NOME_SECAO, type Aula, type Curso } from "@/lib/formacao";
 import BotaoEnviar from "@/components/botao-enviar";
 import ExcluirDoisPassos from "@/components/excluir-dois-passos";
@@ -37,7 +37,7 @@ export default async function EditarCursoPage({
     novo ? Promise.resolve({ data: null }) : supabase.from("cursos").select(CAMPOS_CURSO).eq("id", cursoId).maybeSingle(),
     novo ? Promise.resolve({ data: [] }) : supabase.from("curso_aulas").select(CAMPOS_AULA).eq("curso_id", cursoId).order("ordem").order("id"),
     novo ? Promise.resolve({ data: [] }) : supabase.from("curso_pessoas").select("perfil_id").eq("curso_id", cursoId),
-    supabase.from("perfis").select("id, nome, papel").eq("ativo", true).order("nome"),
+    supabase.from("perfis").select("id, nome, funcoes").eq("ativo", true).order("nome"),
   ]);
   const curso = c as Curso | null;
   if (!novo && !curso) notFound();
@@ -142,7 +142,7 @@ export default async function EditarCursoPage({
                 {(pessoas ?? []).map((x) => (
                   <label key={x.id} className="flex items-center gap-2 text-sm text-cinza-escuro">
                     <input type="checkbox" name="pessoa" value={x.id} defaultChecked={escolhidas.has(x.id)} className="h-4 w-4 accent-trinitas-profundo" />
-                    {x.nome} <span className="text-xs text-cinza-medio">({NOME_PAPEL[x.papel as Papel]})</span>
+                    {x.nome} <span className="text-xs text-cinza-medio">({nomeFuncoes(x.funcoes as Papel[])})</span>
                   </label>
                 ))}
               </div>

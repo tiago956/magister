@@ -74,7 +74,7 @@ export function doDia(eventos: Evento[], dia: string, turmaId?: number) {
 }
 
 export function podeAgendar(p: Perfil | null) {
-  return !!p && p.ativo && (p.papel === "coordenacao" || p.papel === "direcao" || p.papel === "secretaria");
+  return !!p && p.ativo && p.funcoes.some((f) => f === "coordenacao" || f === "direcao" || f === "secretaria");
 }
 
 /** "2027-03" a partir de uma data ISO. */

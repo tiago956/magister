@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { ehGestor, NOME_PAPEL, perfilAtual } from "@/lib/dados";
+import { ehGestor, nomeFuncoes, perfilAtual } from "@/lib/dados";
 import Menu from "./menu";
 import BotaoEnviar from "@/components/botao-enviar";
 
@@ -19,7 +19,7 @@ export default async function SistemaLayout({ children }: { children: React.Reac
         <div className="mt-auto flex items-center justify-between gap-3 border-t border-borda px-2 pt-4">
           <div className="flex min-w-0 flex-col text-[13px]">
             <span className="truncate font-semibold">{perfil.nome}</span>
-            <span className="text-cinza-medio">{NOME_PAPEL[perfil.papel]}</span>
+            <span className="text-cinza-medio">{nomeFuncoes(perfil.funcoes)}</span>
           </div>
           <form action="/auth/sair" method="post">
             <BotaoEnviar pendente="Saindo..." className="rounded-sm border border-borda px-3 py-2 text-xs font-medium hover:bg-cinza-claro">
