@@ -1,0 +1,17 @@
+# dependências
+/node_modules
+
+# build
+/.next/
+/out/
+*.tsbuildinfo
+next-env.d.ts
+
+# variáveis de ambiente (nunca enviar chaves ao GitHub)
+.env
+.env.local
+.env.*.local
+
+# sistema
+.DS_Store
+*.log
