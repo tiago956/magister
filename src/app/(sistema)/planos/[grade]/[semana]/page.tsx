@@ -8,6 +8,7 @@ import { dataCurta, dataDaAula, ehSegunda, prazoEnvio, rotuloSemana } from "@/li
 import { Selo, situacao, type StatusPlano } from "@/lib/status";
 import Editor from "./editor";
 import { RotuloLink } from "@/components/link-status";
+import { COR_TIPO, doDia, eventosEntre } from "@/lib/calendario";
 
 export const metadata: Metadata = { title: "Plano de aula" };
 
@@ -49,7 +50,8 @@ export default async function PlanoPage({
     );
   }
 
-  const [{ data: plano }, { data: banco }, { data: dono }] = await Promise.all([
+  const diaDaAula = dataDaAula(semana, aula.dia_semana);
+  const [{ data: plano }, { data: banco }, { data: dono }, eventosDoDia] = await Promise.all([
     supabase
       .from("planos_aula")
       .select("id, topico, conteudo, status, realizacao, obs_pos_aula, enviado_em, revisado_em")
@@ -66,7 +68,9 @@ export default async function PlanoPage({
     aula.professor_id
       ? supabase.from("perfis").select("nome").eq("id", aula.professor_id).single()
       : Promise.resolve({ data: null }),
+    eventosEntre(supabase, diaDaAula, diaDaAula).then((evs) => doDia(evs, diaDaAula, aula.turma_id)),
   ]);
+  const semAula = eventosDoDia.find((e) => e.suspende_aulas);
 
   const { data: coms } = plano
     ? await supabase
@@ -109,7 +113,7 @@ export default async function PlanoPage({
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="flex flex-col gap-1.5">
             <span className="text-[13px] text-cinza-medio">
-              {aula.turma} · {DIAS[aula.dia_semana - 1]}, {dataCurta(dataDaAula(semana, aula.dia_semana))} · {hora(aula.inicio)} às {hora(aula.fim)}
+              {aula.turma} · {DIAS[aula.dia_semana - 1]}, {dataCurta(diaDaAula)} · {hora(aula.inicio)} às {hora(aula.fim)}
               {dono?.nome && !responsavel ? ` · ${dono.nome}` : ""}
             </span>
             <h1 className="text-3xl">{aula.disciplina}</h1>
@@ -121,6 +125,22 @@ export default async function PlanoPage({
           <Selo status={sit} />
         </div>
       </header>
+
+      {semAula && (
+        <p className="rounded-sm border border-borda border-l-4 border-l-alerta-texto bg-white px-4 py-3 text-sm text-cinza-escuro">
+          Pelo calendário escolar não há aula neste dia ({semAula.titulo}). Este plano não entra na contagem da semana.
+        </p>
+      )}
+      {eventosDoDia.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 text-[13px] text-cinza-medio">
+          Neste dia:
+          {eventosDoDia.map((e) => (
+            <span key={e.id} className={"rounded-sm border-l-2 px-1.5 py-0.5 text-xs " + COR_TIPO[e.tipo]}>
+              {e.titulo}
+            </span>
+          ))}
+        </div>
+      )}
 
       {ok && (
         <p role="status" className="rounded-sm border border-trinitas bg-trinitas-suave px-4 py-3 text-sm text-trinitas-texto">

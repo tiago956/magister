@@ -10,7 +10,7 @@ const ITENS: Item[] = [
   { href: "/", nome: "Painel" },
   { href: "/planos", nome: "Planos de aula" },
   { href: "/revisao", nome: "Revisão", soGestao: true },
-  { href: "/calendario", nome: "Calendário", emBreve: true },
+  { href: "/calendario", nome: "Calendário" },
   { href: "/atribuicoes", nome: "Atribuições", soGestao: true },
 ];
 
