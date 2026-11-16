@@ -129,7 +129,7 @@ function FormPasta({ pasta, turmas, disciplinas }: { pasta?: Pasta; turmas: Opca
         <Grupo titulo="Função" nome="papel" opcoes={(Object.keys(NOME_PAPEL) as Papel[]).map((p) => ({ id: p, nome: NOME_PAPEL[p] }))} marcados={pasta?.papeis ?? []} />
         <Grupo titulo="Turmas que leciona" nome="turma" opcoes={turmas} marcados={pasta?.turmas ?? []} />
         <Grupo titulo="Matérias que leciona" nome="disciplina" opcoes={disciplinas} marcados={pasta?.disciplinas ?? []} />
-        <p className="text-xs text-cinza-medio">Direção e coordenação veem todas as pastas.</p>
+        <p className="text-xs text-cinza-medio">A direção vê todas as pastas; a coordenação segue as regras marcadas acima.</p>
       </fieldset>
 
       <div className="md:col-span-2">
