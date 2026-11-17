@@ -4,6 +4,7 @@ import { criarClienteServidor } from "@/lib/supabase/server";
 import { DIAS, ehGestor, FUNCOES, hora, NOME_PAPEL, perfilAtual, tem, type Perfil } from "@/lib/dados";
 import { atribuirEspecialista, atribuirRegente, salvarFuncoes, salvarMatriz } from "./actions";
 import BotaoEnviar from "@/components/botao-enviar";
+import FormEspecialista from "./especialista";
 import { RotuloLink } from "@/components/link-status";
 
 export const metadata: Metadata = { title: "Atribuições" };
@@ -63,24 +64,45 @@ export default async function AtribuicoesPage({
   }
   // O que cada pessoa leciona, a partir das atribuições (uma pessoa pode ser regente e especialista ao mesmo tempo).
   const regenteEm = new Map<string, Set<number>>();
-  const especialistaEm = new Map<string, Set<number>>();
+  const especialistaEm = new Map<string, Map<number, Set<number>>>(); // professor → matéria → turmas
   const discPorId = new Map(disciplinas.map((x) => [x.id, x]));
   for (const x of atribuicoes) {
-    const alvo = discPorId.get(x.disciplina_id)?.do_regente ? regenteEm : especialistaEm;
-    const valor = alvo === regenteEm ? x.turma_id : x.disciplina_id;
-    if (!alvo.has(x.professor_id)) alvo.set(x.professor_id, new Set());
-    alvo.get(x.professor_id)!.add(valor);
+    if (discPorId.get(x.disciplina_id)?.do_regente) {
+      if (!regenteEm.has(x.professor_id)) regenteEm.set(x.professor_id, new Set());
+      regenteEm.get(x.professor_id)!.add(x.turma_id);
+    } else {
+      if (!especialistaEm.has(x.professor_id)) especialistaEm.set(x.professor_id, new Map());
+      const m = especialistaEm.get(x.professor_id)!;
+      if (!m.has(x.disciplina_id)) m.set(x.disciplina_id, new Set());
+      m.get(x.disciplina_id)!.add(x.turma_id);
+    }
   }
   const nomeTurma = new Map(turmas.map((x) => [x.id, x]));
   const leciona = (id: string) => {
     const partes: string[] = [];
     const r = [...(regenteEm.get(id) ?? [])].map((i) => nomeTurma.get(i)).filter((x) => !!x).sort((a, b) => a!.ordem - b!.ordem);
-    const e = [...(especialistaEm.get(id) ?? [])].map((i) => discPorId.get(i)).filter((x) => !!x).sort((a, b) => a!.ordem - b!.ordem);
     if (r.length) partes.push(`Regente: ${r.map((x) => x!.nome).join(", ")}`);
-    if (e.length) partes.push(`Especialista: ${e.map((x) => x!.nome).join(", ")}`);
+    const e = [...(especialistaEm.get(id) ?? new Map<number, Set<number>>())]
+      .map(([di, ts]) => ({ d: discPorId.get(di), ts }))
+      .filter((x) => !!x.d)
+      .sort((a, b) => a.d!.ordem - b.d!.ordem);
+    for (const { d, ts } of e) {
+      const nomes = [...ts].map((i) => nomeTurma.get(i)).filter((x) => !!x).sort((a, b) => a!.ordem - b!.ordem).map((x) => x!.nome);
+      partes.push(`${d!.nome}: ${nomes.join(", ")}`);
+    }
     return partes;
   };
   const souDirecao = tem(perfil, "direcao");
+  const turmasPorMateria: Record<number, { id: number; nome: string; professor: string | null }[]> = {};
+  for (const di of disciplinas) {
+    if (di.do_regente) continue;
+    turmasPorMateria[di.id] = turmas
+      .filter((tu) => nasTurmas.get(tu.id)?.has(di.id))
+      .map((tu) => {
+        const pid = dono.get(`${tu.id}:${di.id}`);
+        return { id: tu.id, nome: tu.nome, professor: pid ? (nomeDe.get(pid) ?? null) : null };
+      });
+  }
 
   const lacunas = turmas.reduce(
     (n, tu) => n + [...(nasTurmas.get(tu.id) ?? [])].filter((di) => !dono.has(`${tu.id}:${di}`)).length,
@@ -129,27 +151,14 @@ export default async function AtribuicoesPage({
           <BotaoEnviar className={botao + " self-start"}>Atribuir regente</BotaoEnviar>
         </form>
 
-        <form action={atribuirEspecialista} className="flex flex-col gap-4 border border-borda bg-white p-6">
-          <div>
-            <h2 className="text-lg">Atribuir especialista</h2>
-            <p className="mt-1 text-sm text-cinza-medio">Uma matéria, em todas as turmas que a têm na grade.</p>
-          </div>
-          <label className="flex flex-col gap-1.5 text-[13px] font-medium text-cinza-escuro">
-            Professor(a)
-            <select name="professor_id" required className={campo} defaultValue="">
-              <option value="" disabled>Escolha</option>
-              {pessoas.map((x) => <option key={x.id} value={x.id}>{x.nome}</option>)}
-            </select>
-          </label>
-          <label className="flex flex-col gap-1.5 text-[13px] font-medium text-cinza-escuro">
-            Matéria
-            <select name="disciplina_id" required className={campo} defaultValue="">
-              <option value="" disabled>Escolha</option>
-              {disciplinas.filter((x) => !x.do_regente).map((x) => <option key={x.id} value={x.id}>{x.nome}</option>)}
-            </select>
-          </label>
-          <BotaoEnviar className={botao + " self-start"}>Atribuir especialista</BotaoEnviar>
-        </form>
+        <FormEspecialista
+          acao={atribuirEspecialista}
+          pessoas={pessoas.map((x) => ({ id: x.id, nome: x.nome }))}
+          materias={disciplinas.filter((x) => !x.do_regente).map((x) => ({ id: x.id, nome: x.nome }))}
+          turmasPorMateria={turmasPorMateria}
+          campo={campo}
+          botao={botao}
+        />
       </section>
 
       {/* Grade semanal da turma */}
