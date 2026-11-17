@@ -64,15 +64,17 @@ export async function atribuirRegente(form: FormData) {
   voltar(`Regente atribuído a ${ids.length} matérias da turma.`);
 }
 
-/** Especialista: um professor recebe uma matéria em todas as turmas que a têm na grade. */
+/** Especialista: um professor recebe uma matéria nas turmas escolhidas (entre as que a têm na grade). */
 export async function atribuirEspecialista(form: FormData) {
   const supabase = await exigirGestao();
   const professor_id = String(form.get("professor_id") ?? "");
   const disciplina_id = Number(form.get("disciplina_id"));
+  const escolhidas = new Set(form.getAll("turma_id").map(Number));
   if (!professor_id || !disciplina_id) voltar("Escolha o professor e a matéria.");
+  if (!escolhidas.size) voltar("Marque ao menos uma turma para o especialista.");
 
   const { data: aulas } = await supabase.from("aulas_semanais").select("turma_id").eq("disciplina_id", disciplina_id);
-  const ids = [...new Set((aulas ?? []).map((a) => a.turma_id as number))];
+  const ids = [...new Set((aulas ?? []).map((a) => a.turma_id as number))].filter((id) => escolhidas.has(id));
   if (ids.length) {
     const linhas = ids.map((turma_id) => ({ professor_id, turma_id, disciplina_id }));
     const { error } = await supabase.from("atribuicoes").upsert(linhas, { onConflict: "turma_id,disciplina_id" });
