@@ -9,6 +9,7 @@ type Item = { href: string; nome: string; emBreve?: boolean; soGestao?: boolean 
 const ITENS: Item[] = [
   { href: "/", nome: "Painel" },
   { href: "/planos", nome: "Planos de aula" },
+  { href: "/diario", nome: "Diário de classe" },
   { href: "/revisao", nome: "Revisão", soGestao: true },
   { href: "/calendario", nome: "Calendário" },
   { href: "/arquivos", nome: "Arquivos" },
